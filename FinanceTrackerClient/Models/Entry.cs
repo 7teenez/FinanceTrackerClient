@@ -7,7 +7,7 @@ namespace FinanceTrackerClient.Models
         public int EntryID { get; set; }
         public int UserID { get; set; }
         public int CategoryID { get; set; }
-        public string CategoryName { get; set; }
+        public string CategoryName { get; set; } //тільки для відображення
         public string Type { get; set; } //"Income" or "Expense"
         public decimal Amount { get; set; }
         public DateTime Date { get; set; }

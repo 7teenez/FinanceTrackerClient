@@ -30,13 +30,16 @@ namespace FinanceTrackerClient
         private void LoadEntries()
         {
             List<Entry> entries = Database.GetEntries(_userId);
-
             foreach (var entry in entries)
             {
                 var category = _categories.FirstOrDefault(c => c.CategoryID == entry.CategoryID);
                 if (category != null)
                 {
-                    entry.Note = $"[{category.Name}] {entry.Note}";
+                    entry.CategoryName = category.Name;
+                }
+                else
+                {
+                    entry.CategoryName = "Невідомо";
                 }
             }
             EntryListView.ItemsSource = entries;
