@@ -36,5 +36,42 @@ namespace FinanceTrackerClient
                 return connection.Query<Entry>("SELECT * FROM Entries WHERE UserID = @UserID", new { UserID = userId }).ToList();
             }
         }
+
+        public static bool Register(string login, string password)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var existing = connection.QueryFirstOrDefault<AuthUser>(
+                    "SELECT * FROM Auth WHERE Login = @Login", new { Login = login });
+                if (existing != null)
+                    return false; //логін зайнятий
+                string hash = GetHash(password); //хешуємо
+                connection.Execute(
+                    "INSERT INTO Auth (Login, Password) VALUES (@Login, @Password)",
+                    new { Login = login, Password = hash });
+                return true;
+            }
+        }
+
+        public static AuthUser Login(string login, string password)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                string hash = GetHash(password); //хеш для порівняння
+                return connection.QueryFirstOrDefault<AuthUser>(
+                    "SELECT * FROM Auth WHERE Login = @Login AND Password = @Password",
+                    new { Login = login, Password = hash });
+            }
+        }
+        //Метод для отримання хешу пароля
+        public static string GetHash(string input)
+        {
+            using (var sha = System.Security.Cryptography.SHA256.Create())
+            {
+                var bytes = System.Text.Encoding.UTF8.GetBytes(input);
+                var hashBytes = sha.ComputeHash(bytes);
+                return Convert.ToBase64String(hashBytes);
+            }
+        }
     }
 }

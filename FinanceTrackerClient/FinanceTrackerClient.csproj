@@ -189,6 +189,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Models\AuthUser.cs" />
     <Compile Include="Models\Category.cs" />
     <Compile Include="Models\Entry.cs" />
     <Compile Include="Models\User.cs" />
