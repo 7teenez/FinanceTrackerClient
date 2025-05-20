@@ -30,28 +30,16 @@ namespace FinanceTrackerClient
         private void LoadEntries()
         {
             List<Entry> entries = Database.GetEntries(_userId);
-            List<EntryViewModel> entryViewModels = new List<EntryViewModel>();
 
             foreach (var entry in entries)
             {
-                string categoryName = "Невідомо";
                 var category = _categories.FirstOrDefault(c => c.CategoryID == entry.CategoryID);
                 if (category != null)
                 {
-                    categoryName = category.Name;
+                    entry.Note = $"[{category.Name}] {entry.Note}";
                 }
-
-                entryViewModels.Add(new EntryViewModel
-                {
-                    Amount = entry.Amount,
-                    CategoryName = categoryName,
-                    Type = entry.Type,
-                    Date = entry.Date.ToShortDateString(),
-                    Note = entry.Note
-                });
             }
-
-            EntryListView.ItemsSource = entryViewModels;
+            EntryListView.ItemsSource = entries;
         }
 
         private void AddButton_Click(object sender, RoutedEventArgs e)
@@ -105,19 +93,20 @@ namespace FinanceTrackerClient
             DatePicker.SelectedDate = null;
         }
 
-        
         private void DeleteButton_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Функція видалення ще не реалізована.");
+            Entry selectedEntry = EntryListView.SelectedItem as Entry;
+            if (selectedEntry == null)
+            {
+                MessageBox.Show("Оберіть запис для видалення.");
+                return;
+            }
+            var result = MessageBox.Show("Ви впевнені, що хочете видалити цей запис?", "Підтвердження", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (result == MessageBoxResult.Yes)
+            {
+                Database.DeleteEntry(selectedEntry.EntryID);
+                LoadEntries();
+            }
         }
-    }
-
-    public class EntryViewModel
-    {
-        public decimal Amount { get; set; }
-        public string CategoryName { get; set; }
-        public string Type { get; set; }
-        public string Date { get; set; }
-        public string Note { get; set; }
     }
 }

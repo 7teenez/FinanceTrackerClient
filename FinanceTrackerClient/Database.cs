@@ -37,6 +37,14 @@ namespace FinanceTrackerClient
             }
         }
 
+        public static void DeleteEntry(int entryId)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                connection.Execute("DELETE FROM Entries WHERE EntryID = @EntryID", new { EntryID = entryId });
+            }
+        }
+
         public static bool Register(string login, string password)
         {
             using (var connection = new SqlConnection(connectionString))
