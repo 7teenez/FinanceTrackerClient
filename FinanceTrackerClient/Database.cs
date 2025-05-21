@@ -81,5 +81,14 @@ namespace FinanceTrackerClient
                 return Convert.ToBase64String(hashBytes);
             }
         }
+
+        public static Category GetCategoryById(int categoryId)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                return connection.QueryFirstOrDefault<Category>(
+                    "SELECT * FROM Categories WHERE CategoryID = @id", new { id = categoryId });
+            }
+        }
     }
 }

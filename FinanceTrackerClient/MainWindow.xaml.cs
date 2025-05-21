@@ -111,5 +111,24 @@ namespace FinanceTrackerClient
                 LoadEntries();
             }
         }
+
+        private async void ExportCsvButton_Click(object sender, RoutedEventArgs e)
+        {
+            var analytics = new AnalyticsService();
+            var result = await analytics.GetAnalyticsAsync(_userId, "month");
+
+            var dialog = new Microsoft.Win32.SaveFileDialog
+            {
+                FileName = $"analytics_{DateTime.Today:yyyyMMdd}",
+                DefaultExt = ".csv",
+                Filter = "CSV files (*.csv)|*.csv"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                AnalyticsExporter.ExportToCsv(result, dialog.FileName);
+                MessageBox.Show("Експорт завершено успішно!");
+            }
+        }
     }
 }
