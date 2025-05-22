@@ -1,12 +1,15 @@
-﻿using System;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
+using Microsoft.Win32;
+using MyApp.Helpers;
 
-namespace FinanceTrackerClient.Settings
+namespace MyApp.ViewModels
 {
     public class SettingsViewModel : INotifyPropertyChanged
     {
@@ -24,6 +27,7 @@ namespace FinanceTrackerClient.Settings
                 ApplyTheme(_selectedTheme);
             }
         }
+
         // Currencies
         public ObservableCollection<string> AvailableCurrencies { get; }
         private string _selectedCurrency;
@@ -35,9 +39,9 @@ namespace FinanceTrackerClient.Settings
                 if (_selectedCurrency == value) return;
                 _selectedCurrency = value;
                 OnPropertyChanged();
-                // Save to settings or apply currency format logic
             }
         }
+
         // Categories
         public ObservableCollection<string> Categories { get; }
         private string _newCategoryName;
@@ -53,21 +57,30 @@ namespace FinanceTrackerClient.Settings
             set { _selectedCategory = value; OnPropertyChanged(); OnPropertyChanged(nameof(CanRemoveCategory)); }
         }
         public bool CanRemoveCategory => !string.IsNullOrEmpty(SelectedCategory);
+
         public ICommand AddCategoryCommand { get; }
         public ICommand RemoveCategoryCommand { get; }
 
         public SettingsViewModel()
         {
-            // Initialize themes
+            // Initialize
             AvailableThemes = new ObservableCollection<string> { "Light", "Dark" };
-            SelectedTheme = LoadThemeFromSettings();
-            // Initialize currencies
             AvailableCurrencies = new ObservableCollection<string> { "USD", "EUR", "UAH" };
-            SelectedCurrency = LoadCurrencyFromSettings();
-            // Initialize categories
             Categories = new ObservableCollection<string>(LoadCategoriesFromSettings());
+
+            // Load persisted settings
+            SelectedTheme = LoadThemeFromSettings();
+            SelectedCurrency = LoadCurrencyFromSettings();
+
             AddCategoryCommand = new RelayCommand(_ => AddCategory(), _ => !string.IsNullOrWhiteSpace(NewCategoryName));
             RemoveCategoryCommand = new RelayCommand(_ => RemoveCategory(), _ => CanRemoveCategory);
+        }
+
+        public void SaveSettings()
+        {
+            SaveThemeToSettings(SelectedTheme);
+            SaveCurrencyToSettings(SelectedCurrency);
+            SaveCategories();
         }
 
         private void AddCategory()
@@ -75,7 +88,6 @@ namespace FinanceTrackerClient.Settings
             if (!Categories.Contains(NewCategoryName))
             {
                 Categories.Add(NewCategoryName);
-                SaveCategories();
                 NewCategoryName = string.Empty;
             }
         }
@@ -83,10 +95,7 @@ namespace FinanceTrackerClient.Settings
         private void RemoveCategory()
         {
             if (CanRemoveCategory)
-            {
                 Categories.Remove(SelectedCategory);
-                SaveCategories();
-            }
         }
 
         private void ApplyTheme(string theme)
@@ -94,55 +103,51 @@ namespace FinanceTrackerClient.Settings
             var dict = new ResourceDictionary();
             var themeFile = theme == "Dark" ? "Themes/DarkTheme.xaml" : "Themes/LightTheme.xaml";
             dict.Source = new Uri($"pack://application:,,,/{themeFile}", UriKind.Absolute);
-            // Remove existing theme dictionaries
+
             var existing = Application.Current.Resources.MergedDictionaries
-                            .FirstOrDefault(d => d.Source != null && d.Source.OriginalString.Contains("Themes/"));
+                                .FirstOrDefault(d => d.Source != null && d.Source.OriginalString.Contains("Themes/"));
             if (existing != null)
                 Application.Current.Resources.MergedDictionaries.Remove(existing);
 
             Application.Current.Resources.MergedDictionaries.Add(dict);
-            SaveThemeToSettings(theme);
         }
 
-        private string LoadThemeFromSettings()
-        {
-            // TODO: Read from persistent storage
-            return "Light";
-        }
+        #region Persistence (using Properties.Settings)
+        private string LoadThemeFromSettings() => Properties.Settings.Default.AppTheme;
         private void SaveThemeToSettings(string theme)
         {
-            // TODO: Write to persistent storage
+            Properties.Settings.Default.AppTheme = theme;
+            Properties.Settings.Default.Save();
         }
 
-        private string LoadCurrencyFromSettings()
+        private string LoadCurrencyFromSettings() => Properties.Settings.Default.AppCurrency;
+        private void SaveCurrencyToSettings(string currency)
         {
-            // TODO: Read from persistent storage
-            return "USD";
-        }
-
-        private void SaveCurrencyToSettings()
-        {
-            // TODO: Write to persistent storage
+            Properties.Settings.Default.AppCurrency = currency;
+            Properties.Settings.Default.Save();
         }
 
         private string[] LoadCategoriesFromSettings()
         {
-            // TODO: Read from persistent storage
-            return new[] { "General", "Work", "Personal" };
+            var data = Properties.Settings.Default.UserCategories;
+            return string.IsNullOrEmpty(data)
+                ? new[] { "General", "Work", "Personal" }
+                : data.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
         }
 
         private void SaveCategories()
         {
-            // TODO: Write to persistent storage
+            Properties.Settings.Default.UserCategories = string.Join(";", Categories);
+            Properties.Settings.Default.Save();
         }
+        #endregion
 
-        // INotifyPropertyChanged
         public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
-            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        protected void OnPropertyChanged([CallerMemberName] string propName = null)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
     }
 
-    // Simple RelayCommand implementation
+    // RelayCommand implementation
     public class RelayCommand : ICommand
     {
         private readonly Action<object> _execute;
