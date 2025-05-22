@@ -1,15 +1,34 @@
-﻿using System.Windows;
+using System.ComponentModel;
+using System.Windows;
+using MyApp.ViewModels;
 
-namespace FinanceTrackerClient.Settings
+namespace MyApp.Views
 {
-    /// <summary>
-    /// Interaction logic for SettingsWindow.xaml
-    /// </summary>
     public partial class SettingsWindow : Window
     {
+        private SettingsViewModel ViewModel => DataContext as SettingsViewModel;
+
         public SettingsWindow()
         {
             InitializeComponent();
+        }
+
+        private void SaveButton_Click(object sender, RoutedEventArgs e)
+        {
+            ViewModel.SaveSettings();
+            DialogResult = true;
+            Close();
+        }
+
+        private void CancelButton_Click(object sender, RoutedEventArgs e)
+        {
+            DialogResult = false;
+            Close();
+        }
+
+        private void SettingsWindow_Closing(object sender, CancelEventArgs e)
+        {
+            // Optional: prompt if unsaved changes exist
         }
     }
 }
